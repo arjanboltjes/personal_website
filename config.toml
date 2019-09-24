@@ -1,4 +1,4 @@
-baseURL = "https://example.com"
+baseURL = "https://relaxed-edison-ae8c95.netlify.com/"
 languageCode = "en-us"
 defaultContentLanguage = "en"
 title = "Tiny Spheres of"
@@ -25,7 +25,7 @@ enableEmoji = true  # Shorthand emojis in content files - https://gohugo.io/func
   # nofollowLinks = true
 
 [taxonomies]
-  tag = "tags"
+  tag = "tags"  
   # Categories are disabled by default.
 
 [params]
