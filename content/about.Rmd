@@ -1,0 +1,44 @@
+---
+title: About Me
+author: Arjan
+date: '2019-09-20'
+slug: about
+categories: []
+tags: []
+comments: no
+images: ~
+---
+
+Hei, I'm Arjan.  
+
+I'm a postdoctoral researcher at the UMC Utrecht, working on the data side of atherosclerotic plaque research since summer 2018.
+
+Originally trained as a medical biologist at the university of Groningen, I obtained my PhD at the Erasmus university of Rotterdam, and did a first postdoc position at the UMC Utrecht / Wilhelmina Children's Hospital (WKZ), both focusing on immunology. Throughout my PhD and first postdoc position I have especially been interested in the role of antigen-presenting cells in immunity.
+
+In the final year and a half of my first postdoc position I have focused more on the analysis of big data sets, which, with the increase of variables measured in contemporary research, in my view is an indispensable skill. In addition, I found out I thoroughly enjoy programming and working on this kind of data.
+
+In my second and current postdoc position I am (in the process of) making the complete transition to data analysis, with a thorough background of immunology and wet lab experience. I work in a team within the [Pasterkamp group][1] on a diverse collection of datasets comprising a large number of patients' data, tissue samples, histology, and the analysis of all this in combination with a range of -omics data (genomics, transcriptomics, epigenomics, proteomics).  
+My current main projects are (1) organizing the bulk RNA sequencing (RNA-seq) of atherosclerotic plaques of 700 patients, and the analysis of these data within the EU H2020 program [Taxinomisis][2], (2) project management of scRNA-seq of atherosclerotic plaques, and (3) setting up cell sorting of specific cell types from atherosclerotic plaques for further applications. Of course, this and much more not just by myself, but in collaboration with a bunch of lovely colleagues.
+
+![This is me \^][3]
+
+  
+  
+#### Leisure time
+As part of my work, but also in my leisure time, I spend time and effort on Linux distributions, Raspberry Pi's, android phones, (open source) programs and tools. During my studies and part of my PhD I have worked as a volunteer at several underground music venues, while nowadays I still DJ at concerts, make radio with friends, and try to find new music wherever I go. Working on a Raspberry pi set up to record my own music to bring all of this together. Additionally, you will often find me cycling, running or climbing.
+
+#### Education
+
++ 1997 - 2006  Medical Biology, University of Groningen, Master's degree
++ 2000 - 2006  Medicine, University of Groningen, Master's degree
++ 2017         Data Science, Institut de santé publique, d'épidémiologie et de développement (ISPED), summer school
++ 2017 - 2018  Data Science specialization run by Johns Hopkins University on [Coursera][4], the massive open online course platform
++ 2018         Data Scientist track and several individual courses on [Datacamp][5]
+
+
+
+[1]: https://www.umcutrecht.nl/en/Research/Strategic-themes/Circulatory-Health/Research-themes/Group-Pasterkamp
+[2]: https://taxinomisis-project.eu/
+[3]: /about_files/about.jpg
+[4]: https://www.coursera.org/specializations/jhu-data-science
+[5]: https://www.datacamp.com/profile/arjanboltjes
