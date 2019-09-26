@@ -73,11 +73,11 @@ enableEmoji = true  # Shorthand emojis in content files - https://gohugo.io/func
   [[params.social]]
     name = "github"
     url = "https://github.com/arjanboltjes"
-
+    
   [[params.social]]
     name = "orcid"
     url = "https://orcid.org/0000-0002-6338-051X"
-    
+
   [[params.social]]
     name = "linkedin"
     url = "https://www.linkedin.com/in/arjan-boltjes-b4822242/"
