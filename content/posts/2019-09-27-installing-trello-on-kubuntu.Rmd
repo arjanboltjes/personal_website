@@ -1,0 +1,126 @@
+---
+title: Installing Trello on Kubuntu
+author: Arjan
+date: '2019-10-10'
+slug: installing-trello-on-kubuntu
+categories:
+  - Linux
+tags:
+  - Trello
+  - Kubuntu
+  - Install
+  - Linux
+images: ~
+---
+
+In my team at the UMC Utrecht we started using [Trello][7] a while ago, but since replacing my openSUSE installation with a Kubuntu 18.04 LTS OS, I had not bothered to reinstall Trello. However, recently I found myself wanting to use it a bit more frequent in order to properly keep track of ongoing projects and tasks. Also at home, for personal projects, I started using it on a daily basis.  
+
+This is what it looks like:
+![Trello example: welcome board](/posts/2019-09-27-installing-trello-on-kubuntu_files/Trello_example.jpeg)
+This is the welcome board provided by Trello itself. You can make your own boards, add lists to that board, add cards to each list, and move them from list to list; for instance use to-do, doing, done lists. Tag cards, add checklists, due dates, etc. And luckily you can change the background also, using an alternative color, or set a photo (provided by [Unsplash][7]) as background. Like this small example I made just now:
+![Trello example: edited board](/posts/2019-09-27-installing-trello-on-kubuntu_files/Trello_example_edited.jpeg)
+
+
+# Installation
+As mentioned above, I recently re-installed Trello on a few of my machines, this time on Kubuntu 18.04 LTS and 19.04; both worked like a charm. However, to be abe to install it, I first needed the software, and I suddenly remembered that Trello does not provide a desktop version for Linux.  
+
+So, what does this mean? Having to look at the phone version every time you need to check your task lists and such wasn't an option. Luckily, a guy named **Daniel Chatfield** offers an unofficial desktop app for Linux on his [Github][1].  
+
+So I started from there. Some minute installation pointers are given on this same Github page. I mostly followed those and filled in the gaps which for experienced Linux users may be obvious, but for relatively new users (like myself) often take time to fill in.  
+
+When installing this on Ubuntu 18.04 I noticed the following message at the top of the Trello window:  
+
+> "This version of Chrome is not supported. Please upgrade to a supported version."  
+
+This doesn't mean Chrome browser is outdated (I don't even have it installed), but that the Trello app as provided by Daniel Chatfield is outdated, as discussed [here][2]. To take care of this, **Ville Viitaharju** has forked the repo, fixed the issue, updating the app, and now offers it on his [Github][3]. This repo is four commits ahead of Chatfield's repo. Note that the links in Viitaharju readme file trace back to Chatfield's version, which is not what we need here.  
+
+Coming from Windows, I'm very much used to a graphical user interface (GUI). Although having grown up with MS DOS where one worked at the DOS prompt (that certainly had [some overlap][4] with the Linux terminal), working with the terminal is still something I had to spend some time on to get used to. So, below, for every step, you will find that step via the *GUI* (in Kubuntu I mostly use Dolphin as a file manager) and via the *Terminal* (default terminal in Kubuntu is Konsole).  
+
+# 1. Download the client for Linux/Ubuntu
+From: https://github.com/Racle/trello-desktop/releases/latest  
+
+### *GUI*
+Either download it manually from your browser: right-click >> save  
+(choose the linux zip ;)  
+
+### *Konsole*
+...or via your *terminal*:  
+```{bash download, eval = FALSE}
+wget https://github.com/Racle/trello-desktop/releases/download/v0.2.0/Trello-linux-0.2.0.zip 
+```
+
+(if you didn't change directories before this command, the file will be in your home directory)  
+
+
+# 2. Unzip in location of your choice
+Often you put software under /opt  
+(see q&a plus discussions [here][5] and [here][6])  
+This is indeed where I have other software manually installed, like Etcher, Zotero, Signal, ownCloud, ...
+
+### *Dolphin AND Konsole*
+You can use Dolphin to extract the Trello zip file: right-click >> extract >> extract archive here, autodetect subfolder.  
+However, from here you need to copy the folder to /opt using the terminal, since Dolphin does not have root access to copy files there.  
+In terminal, type:  
+```{bash copy, eval = FALSE}
+sudo cp -r /media/storage/Downloads/Trello-linux-0.2.0 /opt/  
+```
+In the command above, the '/media/storage/Downloads/' is the place where I downloaded my Trello zip. Replace the location with your download location.
+
+### *Konsole only*
+You can do this straight away, combining unzipping and copying, in the terminal:  
+```{bash unzip, eval = FALSE}
+sudo unzip /home/ab/Trello-linux-0.2.0.zip -d /opt/Trello/
+```
+
+
+# 3. Create a shortcut
+You probably want a shortcut to the Trello client, instead of having to find the program in its folder every time you need it.  
+
+### *Dolphin*
++ Go to ~/.local/share/applications  
++ Right-click in empty white screen >> Create New >> Text File  
++ In the pop-up 'Enter text filename', fill in "trello.desktop"  
++ Click OK  
++ Right-click trello.desktop >> Open with >> Kate (or Vim / your favourite text editor / ...)  
++ Add the following to the text file:  
+
+>  [Desktop Entry]  
+>  Name=Trello Client  
+>  Exec=<path to the unzipped Trello folder>/Trello  
+>  Terminal=false  
+>  Type=Application  
+>  Icon=<path to the unzipped Trello folder>/resources/app/static/Icon.png  
+	
+Make sure to alter the 'Exec' and 'Icon' parts with the proper path to where you copied Trello  
+I my case it looked like this:  
+
+>  [Desktop Entry]  
+>  Name=Trello Client  
+>  Exec=/opt/Trello/Trello  
+>  Terminal=false  
+>  Type=Application  
+>  Icon=/opt/Trello/resources/app/static/Icon.png  
+
+### *Konsole*
+```{bash desktop_entry, eval = FALSE}
+>  cd ~/.local/share/applications
+>  vim trello.desktop
+```
++ press insert  
++ Fill in the above specifics (*see Dolphin part*) in this file  
++ press esc  
++ press :exit!  
+
+
+## **That's it.**  
+Go to your start menu, and start typing 'Trello', and the program will pop-up for you to start it, log in (or sign up) and use it.  
+
+
+[1]: https://github.com/danielchatfield/trello-desktop 
+[2]: https://github.com/danielchatfield/trello-desktop/issues/60
+[3]: https://github.com/Racle/trello-desktop
+[4]: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/4/html/Step_by_Step_Guide/ap-doslinux.html
+[5]: https://askubuntu.com/questions/1148/when-installing-user-applications-where-do-best-practices-suggest-they-be-loc
+[6]: https://askubuntu.com/questions/6897/where-to-install-programs
+[7]: https://trello.com/
+[7]: https://unsplash.com/
