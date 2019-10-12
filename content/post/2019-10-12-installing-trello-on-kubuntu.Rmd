@@ -1,24 +1,26 @@
 ---
 title: Installing Trello on Kubuntu
 author: Arjan
-date: '2019-10-10'
+date: '2019-10-12'
 slug: installing-trello-on-kubuntu
-categories:
-  - Linux
+categories: []
 tags:
   - Trello
   - Kubuntu
-  - Install
+  - Ubuntu
+  - Installation
   - Linux
+  - Guide
+comments: no
 images: ~
 ---
 
 In my team at the UMC Utrecht we started using [Trello][7] a while ago, but since replacing my openSUSE installation with a Kubuntu 18.04 LTS OS, I had not bothered to reinstall Trello. However, recently I found myself wanting to use it a bit more frequent in order to properly keep track of ongoing projects and tasks. Also at home, for personal projects, I started using it on a daily basis.  
 
 This is what it looks like:
-![Trello example: welcome board](/posts/2019-09-27-installing-trello-on-kubuntu_files/Trello_example.jpeg)
+![Trello example welcome board](/post/2019-10-12-installing-trello-on-kubuntu_files/Trello_example.jpeg)
 This is the welcome board provided by Trello itself. You can make your own boards, add lists to that board, add cards to each list, and move them from list to list; for instance use to-do, doing, done lists. Tag cards, add checklists, due dates, etc. And luckily you can change the background also, using an alternative color, or set a photo (provided by [Unsplash][7]) as background. Like this small example I made just now:
-![Trello example: edited board](/posts/2019-09-27-installing-trello-on-kubuntu_files/Trello_example_edited.jpeg)
+![Trello example edited board](/post/2019-10-12-installing-trello-on-kubuntu_files/Trello_example_edited.jpeg)
 
 
 # Installation
