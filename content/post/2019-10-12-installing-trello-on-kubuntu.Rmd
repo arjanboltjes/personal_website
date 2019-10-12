@@ -111,7 +111,7 @@ I my case it looked like this:
 + press insert  
 + Fill in the above specifics (*see Dolphin part*) in this file  
 + press esc  
-+ press :exit!  
++ type ":exit!"  
 
 
 ## **That's it.**  
