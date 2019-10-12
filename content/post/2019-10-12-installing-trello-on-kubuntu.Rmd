@@ -19,7 +19,7 @@ In my team at the UMC Utrecht we started using [Trello][7] a while ago, but sinc
 
 This is what it looks like:
 ![Trello example welcome board](/post/2019-10-12-installing-trello-on-kubuntu_files/Trello_example.jpeg)
-This is the welcome board provided by Trello itself. You can make your own boards, add lists to that board, add cards to each list, and move them from list to list; for instance use to-do, doing, done lists. Tag cards, add checklists, due dates, etc. And luckily you can change the background also, using an alternative color, or set a photo (provided by [Unsplash][7]) as background. Like this small example I made just now:
+This is the welcome board provided by Trello itself. You can make your own boards, add lists to that board, add cards to each list, and move them from list to list; for instance use to-do, doing, done lists. Tag cards, add checklists, due dates, etc. And luckily you can change the background also, using an alternative color, or set a photo (provided by [Unsplash][8]) as background. Like this small example I made just now:
 ![Trello example edited board](/post/2019-10-12-installing-trello-on-kubuntu_files/Trello_example_edited.jpeg)
 
 
@@ -125,4 +125,4 @@ Go to your start menu, and start typing 'Trello', and the program will pop-up fo
 [5]: https://askubuntu.com/questions/1148/when-installing-user-applications-where-do-best-practices-suggest-they-be-loc
 [6]: https://askubuntu.com/questions/6897/where-to-install-programs
 [7]: https://trello.com/
-[7]: https://unsplash.com/
+[8]: https://unsplash.com/
