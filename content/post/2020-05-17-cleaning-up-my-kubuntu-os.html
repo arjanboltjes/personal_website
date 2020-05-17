@@ -1,0 +1,234 @@
+---
+title: Cleaning up my Kubuntu OS
+author: Arjan
+date: '2020-05-17'
+slug: cleaning-up-my-kubuntu-os
+categories: []
+tags:
+  - Kubuntu
+  - Linux
+  - Ubuntu
+  - Guide
+comments: no
+images: ~
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>From time to time I suddenly get a notification that I’m running out of disk space. While I often try to not install all kinds of software that I don’t need, and minimize saving user files on the Kubuntu partition - I have all my personal files on a <a href="https://tinyspheresof.netlify.app/2019/12/01/kubuntu-windows-10-dual-boot-with-shared-documents-partition-installing-kubuntu-and-further-setup/">separate partition</a> - the computer clogs up after a while anyway. If not with clutter like the above, then with bloated log files. The latter often comes as a surprise, where I had 20GB free disk space a few hours ago, I suddenly get the low space pop-up with a few hundred MS’s left.</p>
+<p>And time and again, I have to remember what I did last time (story of my life;). So, I decided to write up a basic routine.</p>
+</div>
+<div id="where-are-the-large-files" class="section level1">
+<h1>Where are the large files?</h1>
+<p>To check my directories for large files, I like to use a combination of <code>du</code> and <code>ls</code>.</p>
+<div id="du" class="section level2">
+<h2>du</h2>
+<p>There’s plenty of ways to run <code>du</code>, but I like output to have the following characteristics</p>
+<ol style="list-style-type: decimal">
+<li>filter: I don’t want to see all files and folders right away - too much information.<br />
+</li>
+<li>sort output: if you have a lot of directories, it’s annoying to go through all of these to check which contains a lot of GB, and which don’t.<br />
+</li>
+<li>show hidden folders: sometimes when you go down a directory that you found to contain a lot of data, you can’t find a directory in it that is very big. This means either the large sized item is a file (or more) in the directory you are in, or there’s one or more hidden directories that are to blame.</li>
+</ol>
+<p>So my <code>du</code> call looks like this:</p>
+<pre class="bash"><code>sudo du -hd1 | sort -h</code></pre>
+<p>Some of that was picked up <a href="https://askubuntu.com/questions/356902/why-doesnt-this-show-the-hidden-files-folders">here</a>. The main answer, containing The answer containing <code>sudo du -chs .[!.]* * | sort -h</code> and the suggestion <code>sudo du -ahd1 | sort -h</code> in the comments both work quite nicely. However, both yield folders AND files. From the output of <code>du</code>, it is often unclear which is which, and therefore I like to split the two, only checking folders with <code>du</code>.</p>
+<p>Let’s brake that down:<br />
+<code>sudo</code>: you’ll need superuser privileges to see the content of all folders<br />
+<code>du</code>: print disk usage<br />
+<code>-hd1</code>: two arguments for <code>du</code></p>
+<ul>
+<li>-h, –human-readable print sizes in human readable format<br />
+</li>
+<li>-d1 –max-depth=N - maximum depth set to 1, so the call does not show sub-directories</li>
+</ul>
+<p><code>|</code>: pipe - connect multiple commands with the vertical bar<br />
+<code>sort -h</code>: sort the <code>du</code> output with the <code>-h</code> argument: -h, –human-numeric-sort compare human readable numbers (e.g., 2K 1G)</p>
+</div>
+<div id="ls" class="section level2">
+<h2>ls</h2>
+<p>In contrast to my standard <code>ls</code> approach (<code>ls -lh</code>), in this case, what goes for <code>du</code>, also counts for <code>ls</code>: you need to be able to see hidden files, and sort your output.</p>
+<pre class="bash"><code>ls -ahlsSr</code></pre>
+<p>Breakdown:<br />
+<code>ls</code>: list information about files<br />
+<code>-ahls</code>: six arguments for <code>ls</code></p>
+<ul>
+<li>-a, –all do not ignore entries starting with .<br />
+</li>
+<li>-h, –human-readable with -l and -s, print sizes like 1K 234M 2G etc.<br />
+</li>
+<li>-l use a long listing format<br />
+</li>
+<li>-s, –size print the allocated size of each file, in blocks<br />
+</li>
+<li>-S sort by file size, largest first<br />
+</li>
+<li>-r, –reverse reverse order while sorting</li>
+</ul>
+</div>
+<div id="procedure" class="section level2">
+<h2>Procedure</h2>
+<p>So, I start in the root folder and work my way down.<br />
+Go to your root:</p>
+<pre class="bash"><code>cd /</code></pre>
+<p>Then run the <code>du</code> command mentioned above:</p>
+<pre class="bash"><code>sudo du -hd1 | sort -h</code></pre>
+<p>When in root folder, its output for instance looking like this:</p>
+<pre><code>0       ./dev
+0       ./proc
+0       ./sys
+4,0K    ./cdrom
+4,0K    ./srv
+8,0K    ./mnt
+16K     ./lost+found
+136K    ./tmp
+1,6M    ./run
+8,3M    ./etc
+12M     ./root
+230M    ./boot
+1,3G    ./opt
+4,1G    ./var
+4,6G    ./snap
+6,8G    ./home
+7,3G    ./usr
+120G    ./media
+144G    .</code></pre>
+<p>Then after looking at the output, and contemplating what should be in some of those directories, I go into one of them, and run my <code>ls</code> command.</p>
+<pre class="bash"><code>ls -ahlsSr</code></pre>
+<p>This command yields a long list of files, sorted by file sizes (largest last), and colour distinction between files, folders, archives, etc.<br />
+Output (bottom part) for /var/log looked like this:<br />
+<img src="/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ls_output.png" alt="ls output" /></p>
+</div>
+<div id="huge-log-files" class="section level2">
+<h2>Huge log files</h2>
+<p>By doing the above, I recently ended up in this specific folder (/var/log), because some of my log files blew up, taking up about 6GB each.<br />
+These were <code>syslog</code> and <code>kern.log</code>.</p>
+<p>There may be a clear reason why these logs are increasing in size so much, so have a look before you try to shrink them.<br />
+Log files you can normally open in a text editor to browse through its content, but if they’re too big, this may fail.<br />
+In any case, you can run the following command to have a look at (the most recent) part of its content.</p>
+<pre class="bash"><code>tail -n 100 /var/log/syslog
+tail -n 100 /var/log/kern.log</code></pre>
+<p>If you see a clear reason, try to tackle that cause in order to stop it repeating.<br />
+For me, I didn’t immediately see a clear reason, so went on to clear their contents.</p>
+<p>I first stumbled upon <a href="https://askubuntu.com/questions/746535/var-log-syslog-growing-indefinitely-in-size">this</a> Ask Ubuntu thread, that specifically asks about syslog, and the main answer is adequate enough to solve your issues. However, it does not explain what these commands do. <a href="https://askubuntu.com/questions/515146/very-large-log-files-what-should-i-do">This</a> thread nicely adds to solving the log problem, but especially <a href="https://askubuntu.com/questions/514748/what-does-dev-null-mean-in-a-shell-script/514985">this</a> thread explains things nicely.</p>
+<p>First up: clear the log files, do NOT delete them.<br />
+When you delete them (<code>rm</code>), and then try to recreate an empty version of them (<code>touch</code>), it may be that in the meantime, the OS tries to write to the no longer existing log file. Besides that, you may get issues with permissions not set properly.</p>
+<p>Instead, use the following command to clear a log - in this case <code>syslog</code></p>
+<pre class="bash"><code>sudo cat /dev/null &gt; /var/log/syslog</code></pre>
+<p>Breakdown:<br />
+<code>sudo</code>: you’ll need superuser privileges to apply this command to syslog<br />
+<code>cat</code>: list the contents of the file coming after it<br />
+<code>/dev/null</code>: a simple device, that looks empty when reading from it<br />
+<code>&gt;</code>: redirect the command on the left to the file on the right<br />
+<code>/var/log/syslog</code>: the log file that you want to clear</p>
+<p>In short, you’re using <code>cat</code> to output the content of <code>/dev/null</code> (empty) to the log file, thereby clearing its original content. The explanations on Ask Ubuntu also show some shorthand commands to do the same.</p>
+</div>
+<div id="journal-log" class="section level2">
+<h2>Journal log</h2>
+<p>At the same time as I came across the above log issues, my journal log was also swamped. This needed a somewhat different approach, I <a href="https://www.linuxuprising.com/2019/10/how-to-clean-up-systemd-journal-logs.html">found out</a>.</p>
+<p>Journal is the logging system for systemd, logging kernel and userland processes. And over time it can take up a quit a chunk of disk space.<br />
+You can check its size by running the following command:</p>
+<pre class="bash"><code>journalctl --disk-usage</code></pre>
+<p>Output should look something like this:</p>
+<pre><code>Archived and active journals take up 528.0M in the file system.  </code></pre>
+<p>You find the logs within <code>/var/log/journal/&lt;machineid&gt;/</code> , where <code>&lt;machineid&gt;</code> is an alphanumeric string identifying your computer.<br />
+Content of the folder is a list of <code>.journal</code> logs.</p>
+<p>It is possible to have a look at the content of any of these, but this mostly looks like gibberish, aka, not human readable.</p>
+<pre class="bash"><code>tail -n 100 user-1000.journal</code></pre>
+<p>If the journal system takes up a lot of disk space, you can shrink the space it takes to a certain set size. The following command e.g. sets it to 500MB.</p>
+<pre class="bash"><code>sudo journalctl --rotate --vacuum-size=500M</code></pre>
+<p>–rotate Request immediate rotation of the journal files<br />
+This argument marks active journal files as archived, making that they are affected by the second argument<br />
+–vacuum-size=BYTES Reduce disk usage below specified size</p>
+<p>Additionally, you can completely empty it and it will start logging anew.</p>
+<pre class="bash"><code>sudo journalctl --rotate --vacuum-time=1s</code></pre>
+<p>–vacuum-time=TIME Remove journal files older than specified time<br />
+In this case all journal files with data older than 1 second will be removed. A new active and empty journal file will be created for logging.</p>
+<p>You can also automate this process, clearing journal logs when the exceed a certain size or age by editing the journald configuration file (<code>/etc/systemd/journald.conf</code>). I haven’t looked into this, yet. I might, if I need it more in the future.</p>
+</div>
+</div>
+<div id="additional-ways-to-free-up-disk-space" class="section level1">
+<h1>Additional ways to free up disk space</h1>
+<div id="browser-data" class="section level2">
+<h2>Browser data</h2>
+<p>While I was at it, I decided to clear some more disk space, so one of the obvious places to look is then my browsing history. If I don’t have this set to clearing automatically, you easily rack up a few GBs in data. In Firefox (FF), my preferred browser, you can simply go to Preferences &gt; Privacy &amp; Security &gt; Cookies and Site Data. It looks like this, and tells you how much data you have stored in FF right now.<br />
+<img src="/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ff_data.png" alt="Firefox data settings" /></p>
+<p>Just click ‘clear data’, and choose in the popup (see pic below) what you want to clear: then click ‘clear’
+<img src="/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ff_clear_data_popup.png" alt="Firefox clear data pop-up" /></p>
+<p>Additionally, I did a quick search for additional steps to clean up disk space. This <a href="https://itsfoss.com/free-up-space-ubuntu-linux/">It’s FOSS article</a> has some nice additions, albeit some others seemed redundant.</p>
+</div>
+<div id="remove-packages-that-are-no-longer-needed" class="section level2">
+<h2>Remove packages that are no longer needed</h2>
+<p>This removes packages that are no longer needed, and old Linux kernels.</p>
+<pre class="bash"><code>sudo apt-get autoremove</code></pre>
+</div>
+<div id="remove-older-versions-of-snap-applications" class="section level2">
+<h2>Remove older versions of Snap applications</h2>
+<p>This addition is a nice one, because these can take up quite a bit of disk space. Snap packages are relatively big in size, and Snap keeps two older versions of each application. If you’re sure you don’t want to revert to an older version, you can simply remove these.</p>
+<p>Check the size of the Snap</p>
+<pre class="bash"><code>du -h /var/lib/snapd/snaps</code></pre>
+<p>Output looks like this:</p>
+<pre><code>4,0K    /var/lib/snapd/snaps/partial
+1,2G    /var/lib/snapd/snaps</code></pre>
+<p>I already cleaned mine, so it’s not so big.</p>
+<p>If you want to look at which Snap packages you have installed, run:</p>
+<pre class="bash"><code>snap list --all</code></pre>
+<p>My output:</p>
+<pre><code>Name                    Version          Rev   Tracking       Publisher   Notes
+chromium                81.0.4044.138    1143  latest/stable  canonical✓  -
+core                    16-2.44.3        9066  latest/stable  canonical✓  core
+core18                  20200427         1754  latest/stable  canonical✓  base
+gtk-common-themes       0.1-36-gc75f853  1506  latest/stable  canonical✓  -
+notepadqq               1.4.8            855   latest/stable  danieleds   -
+slack                   4.4.2            23    latest/stable  slack✓      classic
+snapd                   2.44.3           7264  latest/stable  canonical✓  snapd
+wine-platform-3-stable  3.0.4            6     latest/stable  mmtrt       -
+wine-platform-runtime   v1.0             123   latest/stable  mmtrt       disabled
+wine-platform-runtime   v1.0             136   latest/stable  mmtrt       -</code></pre>
+<p>If you want to get rid of a Snap package, you can run the following command:</p>
+<pre class="bash"><code>snap remove wine-platform-runtime --revision 123</code></pre>
+<p>Output:</p>
+<pre><code>wine-platform-runtime (revision 123) removed</code></pre>
+<p>By default all the snap revisions are removed. However, in this case, I only wanted to remove the disabled Snap package wine-platform-runtime (revision 123). Therefore I added the <code>--revision</code> argument to the command, followed by the revision number. Without this information both versions of wine-platform-runtime would have been removed.</p>
+<p>If you want to get rid of all disabled Snap packages, you can create a shell script doing this, as described <a href="https://askubuntu.com/questions/1036633/how-to-remove-disabled-unused-snap-packages-with-a-single-line-of-command">here</a></p>
+<p>Go to your home folder:</p>
+<pre class="bash"><code>cd ~</code></pre>
+<p>Create a file in your favourite text editor. I used Vim to do this, and called it <code>remove_old_snaps</code>:</p>
+<pre class="bash"><code>vim remove_old_snaps</code></pre>
+<p>Copy-paste the following code into it and save the file.<br />
+So in Vim, press <code>Ins</code><br />
+Paste the following code:</p>
+<pre class="bash"><code>#!/bin/bash
+# Removes old revisions of snaps
+# CLOSE ALL SNAPS BEFORE RUNNING THIS
+set -eu
+
+LANG=en_US.UTF-8 snap list --all | awk &#39;/disabled/{print $1, $3}&#39; |
+    while read snapname revision; do
+        snap remove &quot;$snapname&quot; --revision=&quot;$revision&quot;
+    done</code></pre>
+<p>Press <code>Esc</code><br />
+Type <code>:exit!</code> to save the file and quit Vim</p>
+<p>To make the script executable, you have to assign the proper rights to it:</p>
+<pre class="bash"><code>chmod +x remove-old-snaps</code></pre>
+<p>Now run the file:</p>
+<pre class="bash"><code>sudo ./remove_old_snaps</code></pre>
+<p>This will give the same output as above, when I removed the single package <code>wine-platform-runtime (revision 123)</code>, yielding a line like this for every package removed.</p>
+<p>When you look at the script, what it does is the following: it calls <code>snap list --all</code>, looks for packages that are disabled, then take the values of those packages that are in columns 1 (Name) and 3 (Revision), and fills these values in, per package, in the <code>snap remove</code> command, in the exact same fashion as my manual removal above: <code>snap remove &lt;snap name&gt; --revision &lt;revision number&gt;</code></p>
+</div>
+<div id="clean-apt-cache" class="section level2">
+<h2>Clean APT cache</h2>
+<p>The advanced package tool (APT) manages software on the system, and keeps a cache of downloaded and installed packages. Some of these may be redundant by now. This hardly takes up space on my system for now.</p>
+<p>Check the size of the cache:</p>
+<pre class="bash"><code>sudo du -sh /var/cache/apt </code></pre>
+<p>Output:</p>
+<pre><code>74M     /var/cache/apt</code></pre>
+<p>Remove outdated packages only:</p>
+<pre class="bash"><code>sudo apt-get autoclean</code></pre>
+<p>Clear entire cache:</p>
+<pre class="bash"><code>sudo apt-get clean</code></pre>
+</div>
+</div>
