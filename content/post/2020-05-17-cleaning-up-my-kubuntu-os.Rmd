@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align="left")
 
 
 # Introduction
-From time to time I suddenly get a notification that I'm running out of disk space. While I often try to not install all kinds of software that I don't need, and minimize saving user files on the Kubuntu partition - I have all my personal files on a [separate partition](https://tinyspheresof.netlify.app/2019/12/01/kubuntu-windows-10-dual-boot-with-shared-documents-partition-installing-kubuntu-and-further-setup/) - the computer clogs up after a while anyway. If not with clutter like the above, then with bloated log files. The latter often comes as a surprise, where I had 20GB free disk space a few hours ago, I suddenly get the low space pop-up with a few hundred MS's left.  
+From time to time I suddenly get a notification that I'm running out of disk space. While I often try to not install all kinds of software that I don't need, and minimize saving user files on the Kubuntu partition - I have all my personal files on a [separate partition](https://tinyspheresof.netlify.app/2019/12/01/kubuntu-windows-10-dual-boot-with-shared-documents-partition-installing-kubuntu-and-further-setup/) - the computer clogs up after a while anyway. If not with clutter like the above, then with bloated log files. The latter often comes as a surprise, where I had 20GB free disk space a few hours ago, I suddenly get the low space pop-up with a few hundred MB's left.  
 
 And time and again, I have to remember what I did last time (story of my life;). So, I decided to write up a basic routine.  
 
@@ -33,14 +33,14 @@ There's plenty of ways to run `du`, but I like output to have the following char
 
 1. filter: I don't want to see all files and folders right away - too much information.  
 2. sort output: if you have a lot of directories, it's annoying to go through all of these to check which contains a lot of GB, and which don't.  
-3. show hidden folders: sometimes when you go down a directory that you found to contain a lot of data, you can't find a directory in it that is very big. This means either the large sized item is a file (or more) in the directory you are in, or there's one or more hidden directories that are to blame.  
+3. show hidden folders: sometimes when you go down a directory that you found to contain a lot of data, you can't find a directory in it that is very big. This means either the large sized item is a file (or more) in the directory you are in, or there are one or more hidden directories that are to blame.  
 
 So my `du` call looks like this:  
 ```{bash du, eval = FALSE}
 sudo du -hd1 | sort -h
 ```
 
-Some of that was picked up [here](https://askubuntu.com/questions/356902/why-doesnt-this-show-the-hidden-files-folders). The main answer, containing The answer containing `sudo du -chs .[!.]* * | sort -h` and the suggestion `sudo du -ahd1 | sort -h` in the comments both work quite nicely. However, both yield folders AND files. From the output of `du`, it is often unclear which is which, and therefore I like to split the two, only checking folders with `du`.  
+Some of that was picked up [here](https://askubuntu.com/questions/356902/why-doesnt-this-show-the-hidden-files-folders). The main answer, containing `sudo du -chs .[!.]* * | sort -h`, and the suggestion `sudo du -ahd1 | sort -h` in the comments both work quite nicely. However, both yield folders AND files. From the output of `du`, it is often unclear which is which, and therefore I like to split the two, only checking folders with `du`.  
 
 Let's brake that down:  
 `sudo`: you'll need superuser privileges to see the content of all folders  
@@ -48,13 +48,13 @@ Let's brake that down:
 `-hd1`: two arguments for `du`  
 
 * -h, --human-readable  print sizes in human readable format  
-* -d1 --max-depth=N -  maximum depth set to 1, so the call does not show sub-directories  
+* -d1 --max-depth=N - maximum depth set to 1, so the call does not show sub-directories  
 
 `|`: pipe - connect multiple commands with the vertical bar  
 `sort -h`: sort the `du` output with the `-h` argument: -h, --human-numeric-sort    compare human readable numbers (e.g., 2K 1G)  
 
 ## ls
-In contrast to my standard `ls` approach (`ls -lh`), in this case, what goes for `du`, also counts for `ls`: you need to be able to see hidden files, and sort your output.  
+In contrast to my standard `ls` approach (`ls -lh`), in this case, what goes for `du`, also goes for `ls`: you need to be able to see hidden files, and to sort your output.  
 ```{bash ls, eval = FALSE}
 ls -ahlsSr
 ```
@@ -105,7 +105,7 @@ When in root folder, its output for instance looking like this:
     120G    ./media
     144G    .
 
-Then after looking at the output, and contemplating what should be in some of those directories, I go into one of them, and run my `ls` command.  
+Then after looking at the output, and contemplating what should be in some of those directories, I go into one of the folders that take up a lot of disk space, run the `du` command again. If again most of the disk space is taken up by a lower level folder, I repeat this process. If most of the disk space seems to be taken up by the current directory, I run my `ls` command.  
 ```{bash ls2, eval = FALSE}
 ls -ahlsSr
 ```
@@ -150,7 +150,7 @@ In short, you're using `cat` to output the content of `/dev/null` (empty) to the
 ## Journal log
 At the same time as I came across the above log issues, my journal log was also swamped. This needed a somewhat different approach, I [found out](https://www.linuxuprising.com/2019/10/how-to-clean-up-systemd-journal-logs.html).  
 
-Journal is the logging system for systemd, logging kernel and userland processes. And over time it can take up a quit a chunk of disk space.  
+Journal is the logging system for systemd, logging kernel and userland processes. And over time it can take up quite some of your disk space.  
 You can check its size by running the following command:  
 ```{bash journal_size, eval = FALSE}
 journalctl --disk-usage
@@ -181,15 +181,16 @@ Additionally, you can completely empty it and it will start logging anew.
 sudo journalctl --rotate --vacuum-time=1s
 ```
 --vacuum-time=TIME      Remove journal files older than specified time  
-In this case all journal files with data older than 1 second will be removed. A new active and empty journal file will be created for logging.  
+In this case, with the settings I used, all journal files with data older than 1 second will be removed. A new active and empty journal file will be created for logging.  
 
-You can also automate this process, clearing journal logs when the exceed a certain size or age by editing the journald configuration file (`/etc/systemd/journald.conf`). I haven't looked into this, yet. I might, if I need it more in the future.  
+You can also automate this process, clearing journal logs when they exceed a certain size or age by editing the journald configuration file (`/etc/systemd/journald.conf`). I haven't looked into this, yet. I might, if I need it more in the future.  
 
 
 # Additional ways to free up disk space
 
 ## Browser data
-While I was at it, I decided to clear some more disk space, so one of the obvious places to look is then my browsing history. If I don't have this set to clearing automatically, you easily rack up a few GBs in data. In Firefox (FF), my preferred browser, you can simply go to Preferences > Privacy & Security > Cookies and Site Data. It looks like this, and tells you how much data you have stored in FF right now.  
+While I was at it, I decided to clear some more disk space, and one of the obvious places to look is my browsing history. If I don't have this set to clearing automatically, you easily rack up a few GBs in data. In Firefox (FF), my preferred browser, you can simply go to Preferences > Privacy & Security > Cookies and Site Data. It looks like this, and tells you how much data you have stored in FF right now:
+
 ![Firefox data settings](/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ff_data.png)
 
 Just click 'clear data', and choose in the popup (see pic below) what you want to clear: then click 'clear'
@@ -248,7 +249,7 @@ Output:
 
 By default all the snap revisions are removed. However, in this case, I only wanted to remove the disabled Snap package wine-platform-runtime (revision 123). Therefore I added the `--revision` argument to the command, followed by the revision number. Without this information both versions of wine-platform-runtime would have been removed.  
 
-If you want to get rid of all disabled Snap packages, you can create a shell script doing this, as described [here](https://askubuntu.com/questions/1036633/how-to-remove-disabled-unused-snap-packages-with-a-single-line-of-command) 
+If you want to get rid of all disabled Snap packages, you can create a shell script that does this, as described [here](https://askubuntu.com/questions/1036633/how-to-remove-disabled-unused-snap-packages-with-a-single-line-of-command) 
     
 Go to your home folder:  
 ```{bash, go_home, eval = FALSE}
@@ -289,7 +290,7 @@ sudo ./remove_old_snaps
 ```
 This will give the same output as above, when I removed the single package `wine-platform-runtime (revision 123)`, yielding a line like this for every package removed.  
 
-When you look at the script, what it does is the following: it calls `snap list --all`, looks for packages that are disabled, then take the values of those packages that are in columns 1 (Name) and 3 (Revision), and fills these values in, per package, in the `snap remove` command, in the exact same fashion as my manual removal above: `snap remove <snap name> --revision <revision number>`  
+When you look at the script, what it does is the following: it calls `snap list --all`, looks for packages that are disabled, then takes the values of those packages that are in columns 1 (Name) and 3 (Revision), and uses these values, per package, in the `snap remove` command, in the exact same fashion as my manual removal above: `snap remove <snap name> --revision <revision number>`  
 
 
 ## Clean APT cache

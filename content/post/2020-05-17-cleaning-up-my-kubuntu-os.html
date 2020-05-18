@@ -17,7 +17,7 @@ images: ~
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>From time to time I suddenly get a notification that I’m running out of disk space. While I often try to not install all kinds of software that I don’t need, and minimize saving user files on the Kubuntu partition - I have all my personal files on a <a href="https://tinyspheresof.netlify.app/2019/12/01/kubuntu-windows-10-dual-boot-with-shared-documents-partition-installing-kubuntu-and-further-setup/">separate partition</a> - the computer clogs up after a while anyway. If not with clutter like the above, then with bloated log files. The latter often comes as a surprise, where I had 20GB free disk space a few hours ago, I suddenly get the low space pop-up with a few hundred MS’s left.</p>
+<p>From time to time I suddenly get a notification that I’m running out of disk space. While I often try to not install all kinds of software that I don’t need, and minimize saving user files on the Kubuntu partition - I have all my personal files on a <a href="https://tinyspheresof.netlify.app/2019/12/01/kubuntu-windows-10-dual-boot-with-shared-documents-partition-installing-kubuntu-and-further-setup/">separate partition</a> - the computer clogs up after a while anyway. If not with clutter like the above, then with bloated log files. The latter often comes as a surprise, where I had 20GB free disk space a few hours ago, I suddenly get the low space pop-up with a few hundred MB’s left.</p>
 <p>And time and again, I have to remember what I did last time (story of my life;). So, I decided to write up a basic routine.</p>
 </div>
 <div id="where-are-the-large-files" class="section level1">
@@ -31,11 +31,11 @@ images: ~
 </li>
 <li>sort output: if you have a lot of directories, it’s annoying to go through all of these to check which contains a lot of GB, and which don’t.<br />
 </li>
-<li>show hidden folders: sometimes when you go down a directory that you found to contain a lot of data, you can’t find a directory in it that is very big. This means either the large sized item is a file (or more) in the directory you are in, or there’s one or more hidden directories that are to blame.</li>
+<li>show hidden folders: sometimes when you go down a directory that you found to contain a lot of data, you can’t find a directory in it that is very big. This means either the large sized item is a file (or more) in the directory you are in, or there are one or more hidden directories that are to blame.</li>
 </ol>
 <p>So my <code>du</code> call looks like this:</p>
 <pre class="bash"><code>sudo du -hd1 | sort -h</code></pre>
-<p>Some of that was picked up <a href="https://askubuntu.com/questions/356902/why-doesnt-this-show-the-hidden-files-folders">here</a>. The main answer, containing The answer containing <code>sudo du -chs .[!.]* * | sort -h</code> and the suggestion <code>sudo du -ahd1 | sort -h</code> in the comments both work quite nicely. However, both yield folders AND files. From the output of <code>du</code>, it is often unclear which is which, and therefore I like to split the two, only checking folders with <code>du</code>.</p>
+<p>Some of that was picked up <a href="https://askubuntu.com/questions/356902/why-doesnt-this-show-the-hidden-files-folders">here</a>. The main answer, containing <code>sudo du -chs .[!.]* * | sort -h</code>, and the suggestion <code>sudo du -ahd1 | sort -h</code> in the comments both work quite nicely. However, both yield folders AND files. From the output of <code>du</code>, it is often unclear which is which, and therefore I like to split the two, only checking folders with <code>du</code>.</p>
 <p>Let’s brake that down:<br />
 <code>sudo</code>: you’ll need superuser privileges to see the content of all folders<br />
 <code>du</code>: print disk usage<br />
@@ -50,7 +50,7 @@ images: ~
 </div>
 <div id="ls" class="section level2">
 <h2>ls</h2>
-<p>In contrast to my standard <code>ls</code> approach (<code>ls -lh</code>), in this case, what goes for <code>du</code>, also counts for <code>ls</code>: you need to be able to see hidden files, and sort your output.</p>
+<p>In contrast to my standard <code>ls</code> approach (<code>ls -lh</code>), in this case, what goes for <code>du</code>, also goes for <code>ls</code>: you need to be able to see hidden files, and to sort your output.</p>
 <pre class="bash"><code>ls -ahlsSr</code></pre>
 <p>Breakdown:<br />
 <code>ls</code>: list information about files<br />
@@ -96,7 +96,7 @@ Go to your root:</p>
 7,3G    ./usr
 120G    ./media
 144G    .</code></pre>
-<p>Then after looking at the output, and contemplating what should be in some of those directories, I go into one of them, and run my <code>ls</code> command.</p>
+<p>Then after looking at the output, and contemplating what should be in some of those directories, I go into one of the folders that take up a lot of disk space, run the <code>du</code> command again. If again most of the disk space is taken up by a lower level folder, I repeat this process. If most of the disk space seems to be taken up by the current directory, I run my <code>ls</code> command.</p>
 <pre class="bash"><code>ls -ahlsSr</code></pre>
 <p>This command yields a long list of files, sorted by file sizes (largest last), and colour distinction between files, folders, archives, etc.<br />
 Output (bottom part) for /var/log looked like this:<br />
@@ -129,7 +129,7 @@ When you delete them (<code>rm</code>), and then try to recreate an empty versio
 <div id="journal-log" class="section level2">
 <h2>Journal log</h2>
 <p>At the same time as I came across the above log issues, my journal log was also swamped. This needed a somewhat different approach, I <a href="https://www.linuxuprising.com/2019/10/how-to-clean-up-systemd-journal-logs.html">found out</a>.</p>
-<p>Journal is the logging system for systemd, logging kernel and userland processes. And over time it can take up a quit a chunk of disk space.<br />
+<p>Journal is the logging system for systemd, logging kernel and userland processes. And over time it can take up quite some of your disk space.<br />
 You can check its size by running the following command:</p>
 <pre class="bash"><code>journalctl --disk-usage</code></pre>
 <p>Output should look something like this:</p>
@@ -146,16 +146,19 @@ This argument marks active journal files as archived, making that they are affec
 <p>Additionally, you can completely empty it and it will start logging anew.</p>
 <pre class="bash"><code>sudo journalctl --rotate --vacuum-time=1s</code></pre>
 <p>–vacuum-time=TIME Remove journal files older than specified time<br />
-In this case all journal files with data older than 1 second will be removed. A new active and empty journal file will be created for logging.</p>
-<p>You can also automate this process, clearing journal logs when the exceed a certain size or age by editing the journald configuration file (<code>/etc/systemd/journald.conf</code>). I haven’t looked into this, yet. I might, if I need it more in the future.</p>
+In this case, with the settings I used, all journal files with data older than 1 second will be removed. A new active and empty journal file will be created for logging.</p>
+<p>You can also automate this process, clearing journal logs when they exceed a certain size or age by editing the journald configuration file (<code>/etc/systemd/journald.conf</code>). I haven’t looked into this, yet. I might, if I need it more in the future.</p>
 </div>
 </div>
 <div id="additional-ways-to-free-up-disk-space" class="section level1">
 <h1>Additional ways to free up disk space</h1>
 <div id="browser-data" class="section level2">
 <h2>Browser data</h2>
-<p>While I was at it, I decided to clear some more disk space, so one of the obvious places to look is then my browsing history. If I don’t have this set to clearing automatically, you easily rack up a few GBs in data. In Firefox (FF), my preferred browser, you can simply go to Preferences &gt; Privacy &amp; Security &gt; Cookies and Site Data. It looks like this, and tells you how much data you have stored in FF right now.<br />
-<img src="/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ff_data.png" alt="Firefox data settings" /></p>
+<p>While I was at it, I decided to clear some more disk space, and one of the obvious places to look is my browsing history. If I don’t have this set to clearing automatically, you easily rack up a few GBs in data. In Firefox (FF), my preferred browser, you can simply go to Preferences &gt; Privacy &amp; Security &gt; Cookies and Site Data. It looks like this, and tells you how much data you have stored in FF right now:</p>
+<div class="figure">
+<img src="/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ff_data.png" alt="Firefox data settings" />
+<p class="caption">Firefox data settings</p>
+</div>
 <p>Just click ‘clear data’, and choose in the popup (see pic below) what you want to clear: then click ‘clear’
 <img src="/post/2020-05-17-cleaning-up-my-kubuntu-os_files/ff_clear_data_popup.png" alt="Firefox clear data pop-up" /></p>
 <p>Additionally, I did a quick search for additional steps to clean up disk space. This <a href="https://itsfoss.com/free-up-space-ubuntu-linux/">It’s FOSS article</a> has some nice additions, albeit some others seemed redundant.</p>
@@ -193,7 +196,7 @@ wine-platform-runtime   v1.0             136   latest/stable  mmtrt       -</cod
 <p>Output:</p>
 <pre><code>wine-platform-runtime (revision 123) removed</code></pre>
 <p>By default all the snap revisions are removed. However, in this case, I only wanted to remove the disabled Snap package wine-platform-runtime (revision 123). Therefore I added the <code>--revision</code> argument to the command, followed by the revision number. Without this information both versions of wine-platform-runtime would have been removed.</p>
-<p>If you want to get rid of all disabled Snap packages, you can create a shell script doing this, as described <a href="https://askubuntu.com/questions/1036633/how-to-remove-disabled-unused-snap-packages-with-a-single-line-of-command">here</a></p>
+<p>If you want to get rid of all disabled Snap packages, you can create a shell script that does this, as described <a href="https://askubuntu.com/questions/1036633/how-to-remove-disabled-unused-snap-packages-with-a-single-line-of-command">here</a></p>
 <p>Go to your home folder:</p>
 <pre class="bash"><code>cd ~</code></pre>
 <p>Create a file in your favourite text editor. I used Vim to do this, and called it <code>remove_old_snaps</code>:</p>
@@ -217,7 +220,7 @@ Type <code>:exit!</code> to save the file and quit Vim</p>
 <p>Now run the file:</p>
 <pre class="bash"><code>sudo ./remove_old_snaps</code></pre>
 <p>This will give the same output as above, when I removed the single package <code>wine-platform-runtime (revision 123)</code>, yielding a line like this for every package removed.</p>
-<p>When you look at the script, what it does is the following: it calls <code>snap list --all</code>, looks for packages that are disabled, then take the values of those packages that are in columns 1 (Name) and 3 (Revision), and fills these values in, per package, in the <code>snap remove</code> command, in the exact same fashion as my manual removal above: <code>snap remove &lt;snap name&gt; --revision &lt;revision number&gt;</code></p>
+<p>When you look at the script, what it does is the following: it calls <code>snap list --all</code>, looks for packages that are disabled, then takes the values of those packages that are in columns 1 (Name) and 3 (Revision), and uses these values, per package, in the <code>snap remove</code> command, in the exact same fashion as my manual removal above: <code>snap remove &lt;snap name&gt; --revision &lt;revision number&gt;</code></p>
 </div>
 <div id="clean-apt-cache" class="section level2">
 <h2>Clean APT cache</h2>
