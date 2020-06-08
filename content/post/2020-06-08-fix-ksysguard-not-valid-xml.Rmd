@@ -16,10 +16,6 @@ comments: no
 images: ~
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 After cleaning my `syslog` and `kern.log` recently, like I described [earlier](https://tinyspheresof.netlify.app/2020/05/17/cleaning-up-my-kubuntu-os/) - my system drive was full due to (among others) bloated log files (7.7GB each this time) - I found that KSysGuard doesn't start properly. I received the following errors, upon which KSysGuard opens its screen without any content: no process table, no CPU usage table.  
 
 Error messages:  
