@@ -1,0 +1,32 @@
+---
+title: Fix KSysGuard - not valid XML
+author: Arjan
+date: '2020-06-08'
+slug: fix-ksysguard-not-valid-xml
+categories: []
+tags:
+  - Kubuntu
+  - Linux
+  - Ubuntu
+  - ProcessTable
+  - SystemLoad2
+  - XML
+  - KSysGuard
+comments: no
+images: ~
+---
+
+
+
+<p>After cleaning my <code>syslog</code> and <code>kern.log</code> recently, like I described <a href="https://tinyspheresof.netlify.app/2020/05/17/cleaning-up-my-kubuntu-os/">earlier</a> - my system drive was full due to (among others) bloated log files (7.7GB each this time) - I found that KSysGuard doesn’t start properly. I received the following errors, upon which KSysGuard opens its screen without any content: no process table, no CPU usage table.</p>
+<p>Error messages:</p>
+<pre><code>The file /home/ab/.local/ksysguard/ProcessTable.sgrd does not contain valid XML
+The file /home/ab/.local/ksysguard/SystemLoad2.sgrd does not contain valid XML</code></pre>
+<p>Upon a <a href="https://duckduckgo.com/?q=ksysguard+ProcessTable.sgrd+does+not+contain+valid+XML+ubuntu">search</a> in <code>duckduckgo</code>, I came accross a <a href="https://askubuntu.com/questions/543750/ksysguard-give-error-the-file-home-mahesh-kde-share-apps-ksysguard-processtabl">similar issue</a> on StackExchange dating already from 2014, with an updated answer from 2018, after KDE5 implementation. This most recent answer suggests the following for <code>ProcessTable.sgrd</code>:</p>
+<pre class="bash"><code>sudo cp /usr/share/ksysguard/ProcessTable.sgrd /home/[youruser]/.local/share/ksysguard/ProcessTable.sgrd</code></pre>
+<p>So, for me that would be:</p>
+<pre class="bash"><code>sudo cp /usr/share/ksysguard/ProcessTable.sgrd /home/ab/.local/share/ksysguard/ProcessTable.sgrd
+sudo cp /usr/share/ksysguard/SystemLoad2.sgrd /home/ab/.local/share/ksysguard/SystemLoad2.sgrd</code></pre>
+<p>This works like a charm.</p>
+<p>And in my case I don’t need to point to the local directory, as suggested in the answer, since the files are picked up automatically by KSysGuard after copying them.</p>
+<p>Interestingly enough, the answer mentions that this happened after cleaning cache and rebooting too fast. Besides emptying abovementioned log files, I emptied journal log and browser data, before this happened. It is unclear to me whether this underlies the issue at hand, and if so, why that would be so.</p>
