@@ -1,0 +1,95 @@
+---
+title: R packages that fail to install - depend on Linux packages
+author: Arjan
+date: '2020-06-13'
+slug: r-packages-that-fail-to-install-depend-on-linux-packages
+categories: []
+tags:
+  - Linux
+  - Ubuntu
+  - R
+  - Packages
+  - Error
+  - Installation
+comments: no
+images: ~
+---
+
+The following R packages may not install properly since they depend on certain Linux packages and/or libraries that need to be installed first. These are often mentioned under system requirements on [Cran](https://cran.r-project.org). 
+
+- openssl & hhtr
+- curl
+- xml2 & rvest
+- hdf5r
+- proj4 & ggalt
+
+Below, you'll find the Linux packages needed for these R packages.  
+Don't forget to run `sudo apt-get update` first, to get info on the newest versions of packages and their dependencies.  
+
+## httr & openssl
+Error message:  
+
+    Configuration failed because openssl was not found. Try installing:
+     * deb: libssl-dev (Debian, Ubuntu, etc)
+
+Run the following to install libssl-dev:  
+```{bash openssl, eval = FALSE}
+sudo apt install libssl-dev
+```
+Then retry to install the R package(s).  
+
+
+## curl
+Error message:
+
+    Configuration failed because libcurl was not found. Try installing:
+     * deb: libcurl4-openssl-dev (Debian, Ubuntu, etc)
+
+Run the following to install libcurl4-openssl-dev:  
+```{bash curl, eval = FALSE}
+sudo apt install libcurl4-openssl-dev
+```
+Then retry to install the R package.  
+
+
+## xml2 & rvest
+Error message:
+
+    Configuration failed because libxml-2.0 was not found. Try installing:
+     * deb: libxml2-dev (Debian, Ubuntu, etc)
+
+Run the following to install libxml2-dev:  
+```{bash xml2, eval = FALSE}
+sudo apt install libxml2-dev
+```
+Then retry to install the R package(s).  
+
+
+## hdf5r
+
+I didn't get an error on my current system, but had this recorded from one my other machines.  
+If you do get an error, running the following to install libhdf5-dev may help:  
+```{bash hdf5r, eval = FALSE}
+sudo apt-get install libhdf5-dev
+```
+Then retry to install the R package.  
+
+
+## proj4 & ggalt
+Error:
+
+    configure: error: libproj and/or proj.h/proj_api.h not found in standard search locations.
+    
+    *** Install PROJ library and if necessary set PKG_CPPFLAGS/PKG_LIBS accordingly.
+    ERROR: configuration failed for package ‘proj4’
+
+ggalt depends on proj4 installation in R, but proj4 depends on two Linux packages, as mentioned in [issue #22](https://github.com/hrbrmstr/ggalt/issues/22) on the ggalt GitHub page:
+
+- libproj-dev
+- libgdal-dev
+
+So, to install these, run:
+```{bash proj4, eval = FALSE}
+sudo apt-get install libproj-dev libgdal-dev
+```
+Then retry to install the R package.  
