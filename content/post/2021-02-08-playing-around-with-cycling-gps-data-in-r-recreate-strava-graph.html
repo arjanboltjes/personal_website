@@ -1,0 +1,376 @@
+---
+title: 'Playing around with cycling GPS data in R: recreate Strava graph'
+author: arjanboltjes
+date: '2021-02-08'
+slug: gps-data-R
+categories:
+  - Guide
+tags:
+  - GPS
+  - Cycling
+  - Guide
+  - R
+  - Strava
+comments: no
+images: ~
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>I like cycling, and as so many, I put my rides on Strava. And the other day, at the end of 2020, I received my year-end list from Strava; I guess it was the time for lists, as plenty of lists abound at that moment. The Strava overview was a slick presentation of my cycling efforts, and some of the plots looked nice enough for me to think: “can I make these in R myself?”. For instance, this graph I thought looked pretty good:<br />
+<img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/strava_year_round_blurred.png" alt="Strava activities year round" /></p>
+<p>Off course, scientifically the figure is awful, since it’s lacking axes, it’s hard to read, etc. And still, visually I find it appealing: it’s literally a year-round depiction of my cycling activities. So, here goes plotting in R.<br />
+It had been a while since I ventured to import my cycling data into R, so I needed to try some tools before succeeding. This is the write-up of importing the data and making some visualizations.</p>
+</div>
+<div id="packages-needed" class="section level1">
+<h1>Packages needed</h1>
+<pre class="r"><code>library(lubridate)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;lubridate&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     date, intersect, setdiff, union</code></pre>
+<pre class="r"><code>library(FITfileR)
+library(gridExtra)
+library(grid)
+library(gtable)
+library(feather)
+library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.0     ✓ purrr   0.3.4
+## ✓ tibble  3.0.4     ✓ dplyr   1.0.2
+## ✓ tidyr   1.1.0     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.5.0</code></pre>
+<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## x lubridate::as.difftime() masks base::as.difftime()
+## x dplyr::combine()         masks gridExtra::combine()
+## x lubridate::date()        masks base::date()
+## x dplyr::filter()          masks stats::filter()
+## x lubridate::intersect()   masks base::intersect()
+## x dplyr::lag()             masks stats::lag()
+## x lubridate::setdiff()     masks base::setdiff()
+## x lubridate::union()       masks base::union()</code></pre>
+</div>
+<div id="importing-data" class="section level1">
+<h1>Importing data</h1>
+<p>I can see from my old script and the <code>setwd</code> that I apparently played around with .fit files when I was still on Windows. By the looks of it, this was during a conference, after a morning run. Now, a few years later, I used this script as a starting point.</p>
+<p>Back then, I used the <code>fit</code> package that I found <a href="https://github.com/kuperov/fit">here</a>. Besides having initial issues installing devtools, it turned out the <code>fit</code> package is not compatible with my version of R. Since there hasn’t been a recent update on that GitHub page it could well be that it is outdated. Another package that I then came across is <code>fitdc</code>, that is found <a href="https://github.com/jmackie/fitdc">here</a>. Installing this package was easy, since it is on <a href="https://cran.r-project.org/web/packages/fitdc/index.html">cran</a>. Despite the GitHub page being archived, and the last update stemming from 4 years ago, the package still worked, simply following the vignette mentioned on the Cran package page. However, going through its workflow, the way things are done seemed a bit elaborate.</p>
+<p>So, I went and looked for a different package: something simpler to work with, and preferably updated relatively recently. That’s when I found <a href="https://github.com/grimbough/fitFileR">FITfileR</a>, written by <a href="https://twitter.com/grimbough">Mike L. Smith</a>. He explains using it on his <a href="https://msmith.de/FITfileR/articles/FITfileR.html">personal website</a>. And it seemed to be what I was looking for, so I used this for the analyses below.</p>
+<p>So, first import my fit files:</p>
+<pre class="r"><code># fit_files &lt;- list.files(pattern = &quot;\\.fit$&quot;)
+
+# Include all FIT files in subdirectories, and include folder names
+fit_files &lt;- list.files(path = &quot;/media/storage/Programming/Fietsanalyse/&quot;, 
+                        pattern = &quot;\\.fit$&quot;, 
+                        include.dirs = TRUE, 
+                        recursive = TRUE, 
+                        full.names = TRUE)
+
+# Read in multiple files into a list of data
+bikedata &lt;- map(fit_files, readFitFile)
+
+# Pull records from bikedata of one data file from that list
+# bike2_records &lt;- records(bikedata[[2]]) %&gt;%
+#         bind_rows() %&gt;%
+#         arrange(timestamp) %&gt;% 
+#         drop_na(distance)
+# 
+# bike2_records
+
+# Now, how to pull records from all data in that list?
+read_records_fun &lt;- function(x) {
+  records(x) %&gt;%
+        bind_rows() %&gt;%
+        arrange(timestamp) %&gt;% 
+        drop_na(distance)
+}
+
+bike_records &lt;- map(bikedata, read_records_fun)
+
+# bike_records[1]
+
+rm(bikedata)</code></pre>
+<p>Especially mapping the <code>readFitFile()</code> function over many fit files took a while (think minutes), and took up quite a bit of memory. For 98 fit files I see I needed 2.2Gb of RAM. This call resulted in an object of class FitFile. From this, we can then pull records using the <code>records()</code> function. I made my own wrapper, that immediately binds the rows of records that belong to the same activity, arranges on timestamp, and drops NA’s in the <code>timestamp</code> variable. Your final results will then be a list of cycling record tibbles, each tibble containing the data of one activity. Depicted below you see my first activity of 2020. I blurred the lattitude and longitude, since I don’t necessarily need my or other people’s address all over the internet.<br />
+<img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/bike_records1_blurred.png" alt="example tibble of activity data" /></p>
+</div>
+<div id="pull-date-distance-and-power-from-each-df-in-the-bike_records-list" class="section level1">
+<h1>Pull date, distance and power from each df in the <code>bike_records</code> list</h1>
+<p>For the figure that I had in mind, we wouldn’t need all that information. What the Strava picture plots is simply a dot for each date that I was on my road bike or indoor trainer. Below, I pull dates from the activities, but since I might use some other variables for other purposes, I decided to pull distance and power from the records, too. When using the final row of distance, I knew how long my ride was. Power on the other hand is only measured when I’m using my indoors bike trainer - I don’t have a power meter on my road bike - , so I used this variable to distinguish between going outside for a bike ride, or riding a bike indoors (bad weather, dark, …).</p>
+<p>So, in this code block I filtered the last row of each tibble. These last rows of each tibble are then bound together, and arranged according to date. The resulting tibble is printed: 15 variables, containing the 10 variables visible in the picture below, plus <code>compressed_speed_distance</code>, <code>grade</code>, <code>resistance</code>, <code>cycle_length</code>, and <code>temperature</code>. Only the first six variables are output from my Garmin 310XT watch, while my Tacx trainer gives all 15 variables as output.</p>
+<pre class="r"><code>filter_dist_all_fun &lt;- function(x) {
+  x %&gt;% 
+    arrange(desc(timestamp)) %&gt;% 
+    slice(1)
+}
+
+dist_filt_bike_records &lt;- map(bike_records, filter_dist_all_fun)
+
+dist_filt_bike_records &lt;- dist_filt_bike_records %&gt;% 
+  bind_rows() %&gt;% 
+  arrange(timestamp)
+
+# dist_filt_bike_records</code></pre>
+<div class="figure">
+<img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/bike_records2_blurred.png" alt="combined activities tibble" />
+<p class="caption">combined activities tibble</p>
+</div>
+<p>Also printed is a <code>table()</code> output answering the question whether I biked outdoors - based on <code>is.na</code> and the power variable.</p>
+<pre class="r"><code>table(&quot;Did I bike outdoors?&quot; = is.na(dist_filt_bike_records$power))</code></pre>
+<pre><code>## Did I bike outdoors?
+## FALSE  TRUE 
+##    43    55</code></pre>
+<p>In the following code block, I selected the date, the final distance of the activity, and the power value from this tibble. At the same time, I added new variables:</p>
+<ul>
+<li><code>virtual</code>: is the activity a “virtual” ride, a.k.a. riding indoors on my trainer?</li>
+<li><code>index</code>: numbering all activities 1 till 98</li>
+<li><code>dist_km</code>: distance of the activity, in kilometers; the original distance variable is in meters</li>
+<li><code>date</code>: date of activity based on the <code>timestamp</code> variable</li>
+<li><code>weekday</code>: day of the week, based on the <code>timestamp</code> variable, and ordered from Monday till Sunday</li>
+<li><code>weeknumber</code>: number of the week the activity was in, based on the <code>timestamp</code> variable</li>
+</ul>
+<p>Creating the <code>weekday</code> variable needed me to set the time internationalization of R. My default is Dutch, so the default weekdays output is days of the week in Dutch. By setting the time aspect of the locale to “C”, the days of the week were now set to English.</p>
+<pre class="r"><code>Sys.setlocale(&quot;LC_TIME&quot;, &quot;C&quot;)</code></pre>
+<pre><code>## [1] &quot;C&quot;</code></pre>
+<pre class="r"><code># dist_2020 &lt;- dist_2020 %&gt;% 
+dist_2020 &lt;- dist_filt_bike_records %&gt;%
+  select(timestamp, distance, power) %&gt;% 
+  mutate(virtual = case_when(is.na(power) ~ &quot;no&quot;,
+                             TRUE ~ &quot;yes&quot;)) %&gt;% 
+  mutate(index = 1:nrow(.)) %&gt;% 
+  mutate(dist_km = round(distance/1000, 2)) %&gt;% 
+  mutate(date = as.Date(timestamp)) %&gt;%
+  mutate(weekday = weekdays(timestamp)) %&gt;% 
+  mutate(weekday = factor(weekday, levels = c(&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;))) %&gt;% 
+  mutate(weeknumber = isoweek(timestamp)) %&gt;% 
+  select(index, everything(), -power)</code></pre>
+</div>
+<div id="plot-activities" class="section level1">
+<h1>Plot activities</h1>
+<p>Now we had enough to plot the activities. For instance, below are plotted, the <code>weeknumber</code> on the x-axis, and <code>weekday</code> on the y-axis. Plotted as points, this will show a point for each activity that took place on a certain date. This is the base for the Strava plot. In this plot, I added colour for cycling indoors (blue) and outdoors (red), and increasing size of the points for distance.</p>
+<pre class="r"><code>dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) + 
+  geom_point(alpha = 0.5, aes(colour = virtual, size = dist_km)) +
+  scale_x_discrete(breaks = 1:53) +
+  scale_y_discrete(limits = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;), 
+                   # breaks = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;),
+                   drop = FALSE)</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/plot_weeknumbers-1.png" width="1152" /></p>
+</div>
+<div id="strava-like-plot-base" class="section level1">
+<h1>Strava-like plot base</h1>
+<p>The above ggplot we then used as basis to build the aformentioned strava plot. It’s the plot as we see above, but then in a circular form. One can plot this by using <code>coord_polar</code>.</p>
+<pre class="r"><code>dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) +
+  geom_point() +
+  scale_x_discrete(breaks = 1:53) +
+  coord_polar()</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/plot_weeknumbers_circ-1.png" width="1152" /></p>
+</div>
+<div id="adjust-strava-like-plot" class="section level1">
+<h1>Adjust Strava-like plot</h1>
+<p>As you can see, it was going the right way, but some parts of the plot needed to be edited/set manually to make the plot look more like the original Strava plot.<br />
+Looking at the above plot, the following needed to be edited:</p>
+<ul>
+<li>make empty space in the middle, in order to make the separate points for Mondays visible; now they were all condensed to a single point
+<ul>
+<li>use <code>scale_y_discrete()</code>: the more “Empty” you add to limits, the bigger the empty space in the middle</li>
+</ul></li>
+<li>add the “week lines” that are drawn through the points belonging to the same week
+<ul>
+<li>use <code>geom_segment()</code>, and use as input data <code>df2</code> that I made telling to draw each line from Monday to Sunday</li>
+</ul></li>
+<li>get rid of the ticks and tick labels
+<ul>
+<li>use <code>theme_void()</code></li>
+</ul></li>
+<li>get rid of the axes labels
+<ul>
+<li>use <code>theme_void()</code></li>
+</ul></li>
+<li>change colour and size of activity points
+<ul>
+<li>set colour and size within <code>geom_point()</code></li>
+</ul></li>
+<li>change background colour
+<ul>
+<li>use <code>theme()</code></li>
+</ul></li>
+</ul>
+<p>This resulted in the following plot:</p>
+<pre class="r"><code>df2 &lt;- tibble(weeknumber = 1:53, lower = &quot;Monday&quot;, upper = &quot;Sunday&quot;)
+
+p &lt;- dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) + 
+  # geom_point(alpha = 0.5, aes(colour = virtual, size = dist_km)) +
+  # geom_vline(xintercept = c(1:53), colour= &quot;lightgrey&quot;) +
+  geom_segment(data = df2, aes(x = weeknumber, y = lower, xend = weeknumber, yend = upper), colour = &quot;grey85&quot;, size = 0.3) +
+  geom_point(colour = &quot;#fc4c02&quot;, size = 3) +
+  scale_x_discrete(breaks = 1:53) +
+  coord_polar() +
+  theme_void() +
+  # add dummy variables to y-axis, to create hole in the middle of your circular plot (Empty * n) and bit of space on the outside (EmptyOut)
+  scale_y_discrete(limits = c(&quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;EmptyIn&quot;, &quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;, &quot;EmptyOut&quot;), 
+                   # breaks = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;),
+                   drop = FALSE) +
+  theme(plot.background = element_rect(fill = &#39;yellow&#39;)) # change colour background
+
+p</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/plot_weeknumbers_circ2-1.png" width="1152" /></p>
+<p>Additionally, you can play around with the margins around the graph, also within the <code>theme()</code> function.</p>
+<pre class="r"><code>p1 &lt;- dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) + 
+  # geom_point(alpha = 0.5, aes(colour = virtual, size = dist_km)) +
+  # geom_vline(xintercept = c(1:53), colour= &quot;lightgrey&quot;) +
+  geom_segment(data = df2, aes(x = weeknumber, y = lower, xend = weeknumber, yend = upper), colour = &quot;grey85&quot;, size = 0.3) +
+  geom_point(colour = &quot;#fc4c02&quot;, size = 3) +
+  scale_x_discrete(breaks = 1:53) +
+  coord_polar() +
+  theme_void() +
+  scale_y_discrete(limits = c(&quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;EmptyIn&quot;, &quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;, &quot;EmptyOut&quot;), 
+                   # breaks = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;),
+                   drop = FALSE) +
+  theme(plot.background = element_rect(fill = &#39;yellow&#39;),
+        plot.margin = unit(c(50, 20, 40, 20), &quot;pt&quot;))
+
+p1</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/plot_weeknumbers_circ_margins-1.png" width="1152" /></p>
+<p>One thing I was missing still is the total number of activities, plotted in the center of the graph. This is a relatively simple addition, via <code>annotate()</code>.</p>
+<pre class="r"><code>p1 +
+  annotate(&quot;text&quot;, x=0, y=0, label = nrow(dist_2020), size = 35)</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/plot_weeknumbers_circ3-1.png" width="1152" />
+You will probably notice that the plot is very much alike the strava plot. The number in the center is slightly lower. This is a.o. because the first n activities of the year were on a different platform, that did not have .fit file export. I didn’t bother importing the gpx files from these.</p>
+</div>
+<div id="adjust-plot-dimensions-and-outside-plot-canvas-colours" class="section level1">
+<h1>Adjust plot dimensions and outside-plot-canvas colours</h1>
+<p>So, now this plot mostly looked like what I got from Strava. You can also play around a bit with dimensions and the colours around the plot.<br />
+So first I set the margins to mimic the dimensions of the original graph. This is without changing the background colours of the rectangle outisde the plot.</p>
+<pre class="r"><code>p2 &lt;- dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) + 
+  # geom_point(alpha = 0.5, aes(colour = virtual, size = dist_km)) +
+  geom_segment(data = df2, aes(x = weeknumber, y = lower, xend = weeknumber, yend = upper), colour = &quot;grey85&quot;, size = 0.3) +
+  geom_point(colour = &quot;#fc4c02&quot;, size = 3) +
+  scale_x_discrete(breaks = 1:53) +
+  coord_polar() +
+  theme_void() +
+  annotate(&quot;text&quot;, x=0, y=0, label = nrow(dist_2020), size = 35) +
+# add dummy variables to y-axis, to create hole in the middle of your circular plot (Empty * n) and bit of space on the outside (EmptyOut)
+  scale_y_discrete(limits = c(&quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;, &quot;EmptyOut&quot;), 
+                   # breaks = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;),
+                   drop = FALSE) +
+# set plot background to colour of choice, and increase margins of plot to create space around plot
+  theme(#panel.background = element_rect(fill = &quot;yellow&quot;), # , color = &quot;pink&quot; 
+        plot.margin = unit(c(150, 0, 200, 0), &quot;pt&quot;), # top, right, bottom, left
+        # panel.border = element_line(colour = &quot;yellow&quot;) # element_blank()
+        plot.background = element_rect(fill = &quot;yellow&quot;)
+        )
+
+p2</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/dimensions-1.png" width="783.36" /></p>
+<p>Then, you can change the colour of the top and bottom, as below.</p>
+<pre class="r"><code>g1 &lt;- ggplotGrob(p2)
+
+# filling with no border line 
+rect_red = rectGrob(gp = gpar(col = NA, fill = &quot;#fc4c02&quot;))
+rect_black = rectGrob(gp = gpar(col = NA, fill = &quot;black&quot;))
+rect_white = rectGrob(gp = gpar(col = NA, fill = &quot;white&quot;))
+
+# library(gtable)
+
+# add to the left and right
+# for(i in c(1, 9)) g1 = gtable_add_grob(g1, rect_black, t = 1, b = 12, l = i)
+
+# add to the bottom
+for(i in c(6, 12)) g1 = gtable_add_grob(g1, rect_white, t = i, l = 1, r = 9)
+
+# add to the top
+for(i in c(1, 6)) g1 = gtable_add_grob(g1, rect_red, t = i, l = 1, r = 9)
+
+grid.arrange(g1)</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/colored_borders-1.png" width="783.36" /></p>
+<pre class="r"><code># The call below does add text to the figure, but overrides background colours
+# p2 +
+#   labs(title=&quot;TOTAL DAYS ACTIVE&quot;) +
+#   theme(plot.title = element_text(family = &quot;sans&quot;, size = 35, hjust = 0.2, margin = margin(b = 70) ) )</code></pre>
+</div>
+<div id="add-caption-text-outside-ggplot" class="section level1">
+<h1>Add caption text outside ggplot</h1>
+<p>The final thing I wanted to add is text in the coloured parts outside the plot, but I couldn’t get this working properly. I mostly based this on the guide posted <a href="https://drawar.github.io/posts/add-borders-annotate-outside-ggplot/">here</a>.<br />
+It could well be that the code block defining colours of the top and bottom rectangles are not the only approach, and perhaps not the best either, and this and the code below can best be approached differently. This is not something that I normally use, so a bit too far out of my comfort zone here, and didn’t want to spend too much time on it. I’ll just leave the code here, and perhaps someday someone will explain to me what went wrong.</p>
+<pre class="r"><code># Add texts
+# Labels grob
+left.title = textGrob(&quot;TOTAL DAYS ACTIVE&quot;, x = 0, y = 0.9, just = c(&quot;left&quot;, &quot;top&quot;), 
+                      gp = gpar(fontsize = 5, fontfamily = &quot;Liberation Sans&quot;, fontface = &quot;bold&quot;))
+labs.title = gTree(&quot;LabsTitle&quot;, children = gList(left.title))
+
+left.head = matrix(list(left.title), nrow = 1)
+head = gtable_matrix(name = &quot;Heading&quot;, grobs = left.head, 
+                     widths = unit(1, &quot;null&quot;), 
+                     heights = unit.c(unit(1.1, &quot;grobheight&quot;, left.title) + unit(0.5, &quot;lines&quot;)))
+
+# Put the labels in their place
+# g1 &lt;- gtable_add_grob(g1, labs.foot, t=7, l=2, r=4)
+g1 &lt;- gtable_add_grob(g1, head, t=1, l=2, r=4)
+grid.arrange(g1)</code></pre>
+</div>
+<div id="make-it-your-own" class="section level1">
+<h1>Make it your own</h1>
+<p>Of course, when you can recreate a plot like this, you can further edit it to make it into something you like best. Change the colours, add more info in the data, etc.<br />
+For instance, change the background. Have point colours depicted type of ride, and add point size depicting distance biked. How else can you boast about those 200+km rides? ;)</p>
+<p>Two plots made with colours using the <code>feather</code> palette packege, which contains a selection of colour palettes inspired by the plumage of Australian birds. You can find it <a href="https://github.com/shandiya/feather">here</a>.</p>
+<p>Rose-crowned Fruit-Dove (Ptilinopus regina):</p>
+<pre class="r"><code>bg_col &lt;- get_pal(&quot;rose_crowned_fruit_dove&quot;)[c(3)]
+lines_col &lt;- get_pal(&quot;rose_crowned_fruit_dove&quot;)[c(5)]
+qual_col2 &lt;- get_pal(&quot;rose_crowned_fruit_dove&quot;)[c(1,8)]
+nr_col &lt;- get_pal(&quot;rose_crowned_fruit_dove&quot;)[c(2)]
+
+p3 &lt;- dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) + 
+  # geom_point(alpha = 0.5, aes(colour = virtual, size = dist_km)) +
+  # geom_vline(xintercept = c(1:53), colour= &quot;lightgrey&quot;) +
+  geom_segment(data = df2, aes(x = weeknumber, y = lower, xend = weeknumber, yend = upper), colour = lines_col, size = 0.3) +
+  # geom_point(colour = &quot;#fc4c02&quot;, size = 3) +
+  geom_point(aes(colour = virtual, size = dist_km)) +
+  scale_x_discrete(breaks = 1:53) +
+  coord_polar() +
+  theme_void() +
+  # add dummy variables to y-axis, to create hole in the middle of your circular plot (Empty * n) and bit of space on the outside (EmptyOut)
+  scale_y_discrete(limits = c(&quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;EmptyIn&quot;, &quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;, &quot;EmptyOut&quot;), 
+                   # breaks = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;),
+                   drop = FALSE) +
+  theme(plot.background = element_rect(fill = bg_col)) + # change colour background
+  scale_colour_manual(values = qual_col2) +
+  annotate(&quot;text&quot;, x=0, y=0, label = nrow(dist_2020), size = 35, colour = nr_col) +
+  theme(legend.position = &quot;none&quot;) # remove colour and size legends
+
+p3</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/make_it_dove-1.png" width="1152" /></p>
+<p>Rainbow Bee-eater (Merops ornatus):</p>
+<pre class="r"><code>bg_col &lt;- get_pal(&quot;bee_eater&quot;)[c(7)]
+lines_col &lt;- get_pal(&quot;bee_eater&quot;)[c(3)]
+qual_col2 &lt;- get_pal(&quot;bee_eater&quot;)[c(4,5)]
+nr_col &lt;- get_pal(&quot;bee_eater&quot;)[c(2)]
+
+p4 &lt;- dist_2020 %&gt;% 
+  ggplot(aes(x = weeknumber, y = weekday)) + 
+  # geom_point(alpha = 0.5, aes(colour = virtual, size = dist_km)) +
+  # geom_vline(xintercept = c(1:53), colour= &quot;lightgrey&quot;) +
+  geom_segment(data = df2, aes(x = weeknumber, y = lower, xend = weeknumber, yend = upper), colour = lines_col, size = 0.3) +
+  # geom_point(colour = &quot;#fc4c02&quot;, size = 3) +
+  geom_point(aes(colour = virtual, size = dist_km)) +
+  scale_x_discrete(breaks = 1:53) +
+  coord_polar() +
+  theme_void() +
+  # add dummy variables to y-axis, to create hole in the middle of your circular plot (Empty * n) and bit of space on the outside (EmptyOut)
+  scale_y_discrete(limits = c(&quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;Empty&quot;, &quot;EmptyIn&quot;, &quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;, &quot;EmptyOut&quot;), 
+                   # breaks = c(&quot;Empty&quot;, &quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;, &quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;),
+                   drop = FALSE) +
+  theme(plot.background = element_rect(fill = bg_col)) + # change colour background
+  scale_colour_manual(values = qual_col2) +
+  annotate(&quot;text&quot;, x=0, y=0, label = nrow(dist_2020), size = 35, colour = nr_col) +
+  theme(legend.position = &quot;none&quot;) # remove colour and size legends
+
+p4</code></pre>
+<p><img src="/post/2021-02-08-playing-around-with-cycling-gps-data-in-r-recreate-strava-graph_files/figure-html/make_it_bea_eater-1.png" width="1152" /></p>
+</div>
